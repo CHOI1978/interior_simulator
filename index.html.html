@@ -1,0 +1,589 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>거실 벽면 인테리어 시뮬레이터</title>
+  <link href="https://fonts.googleapis.com/css?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    html, body {
+      margin: 0; padding: 0; height: 100%; font-family: 'Inter', 'Noto Sans KR', sans-serif;
+      background: linear-gradient(120deg,#e3ebf7 0%, #f7fafc 60%, #e9e3f7 100%);
+      overflow-x: auto; overflow-y: auto;
+    }
+    body { display: flex; min-height: 100vh; }
+    #sidebar {
+      width: 330px; min-width: 280px; max-height: 100vh;
+      background: #ffffffcc;
+      border-radius: 28px;
+      box-shadow: 0 10px 30px #8da1c055, 0 1.5px 0 #e2e8f0;
+      margin: 24px 0 24px 24px;
+      padding: 24px 16px 20px 16px;
+      display: flex; flex-direction: column; align-items: stretch;
+      border: none;
+    }
+    #sidebar h3, #sidebar h4 { margin-top: 0; margin-bottom: 13px; font-weight: 700; letter-spacing: -1px;}
+    #sidebar input[type="file"] { margin-bottom: 4px;}
+    #sidebar .upload-row { display: flex; gap: 8px; align-items: center; margin-bottom: 4px;}
+    #sidebar .upload-row input[type="number"] {
+      width: 74px; min-width: 60px; margin-bottom: 0;
+      font-size: 13px; padding: 4.5px 7px;
+    }
+    #sidebar input[type="text"] {
+      border-radius: 10px; border: 1.5px solid #cfd8e3; padding: 6px 9px; font-size: 14px;
+      margin-bottom: 4px; outline: none; background: #f8fafc; width: 100%;
+    }
+    #sidebar input[type="text"]:focus, #sidebar input[type="number"]:focus {
+      border: 1.7px solid #8fa6e6;
+      background: #f0f5ff;
+    }
+    #sidebar button {
+      background: linear-gradient(90deg, #6b84ce, #a7baf7);
+      color: #fff; border: none; border-radius: 10px; font-weight: 600;
+      padding: 6px 0; margin: 6px 2px 10px 0; cursor: pointer; font-size: 13.5px;
+      box-shadow: 0 2px 8px #9ea8cc33;
+      transition: background 0.13s, transform 0.12s;
+      display: inline-flex; align-items: center; gap: 5px; width: 100%;
+      min-width: 0;
+    }
+    #sidebar button:hover {
+      background: linear-gradient(90deg,#495b99,#8392bb); transform: translateY(-2px) scale(1.05);
+    }
+
+    /* ▽ 제품 리스트 스크롤 + 세로 나열 한 칸에 한 제품 */
+    #productList {
+      max-height: 240px;
+      overflow-y: auto;
+      margin-bottom: 6px;
+      padding-right: 2px;
+      display: block;
+      scrollbar-width: thin;
+      scrollbar-color: #b0bad7 #f4f6fa;
+    }
+    #productList::-webkit-scrollbar { width: 8px;}
+    #productList::-webkit-scrollbar-thumb { background: #b0bad7bb; border-radius: 5px;}
+    #productList::-webkit-scrollbar-track { background: #f4f6fa;}
+    .product {
+      display: flex; flex-direction: column; align-items: center;
+      background: #f4f6fa;
+      border-radius: 10px; border: 1.2px solid #dae4f2;
+      box-shadow: 0 2px 8px #d3d8e022;
+      padding: 10px 6px 7px 6px;
+      min-width: 0; width: 100%; min-height: 56px;
+      margin: 0 0 9px 0;
+      transition: 0.14s;
+      position: relative;
+      cursor: pointer;
+      box-sizing: border-box;
+    }
+    .product.selected-product {
+      border: 2px solid #e53935 !important;
+      background: #ffeaea;
+      box-shadow: 0 0 10px #e5393530;
+    }
+    .product img {
+      margin: 0 0 5px 0 !important;
+      width: 38px; height: 38px;
+      object-fit: contain;
+      border-radius: 6px; background: #fff; border: 1px solid #e4e8ee;
+    }
+    .product-info {
+      font-size: 13px;
+      color: #333;
+      text-align: center;
+      font-weight: 500;
+      line-height: 1.3;
+      margin-bottom: 3px;
+      white-space: nowrap;
+      letter-spacing: -0.5px;
+    }
+    .product-buttons {
+      margin: 0 !important; margin-top: 2px !important;
+      display: flex; flex-direction: row; gap: 3px;
+      justify-content: center; width: 100%;
+    }
+    .product-buttons button {
+      font-size: 10.5px;
+      padding: 2.5px 9px;
+      margin: 0 1.5px;
+      background: #e9e6fa; color: #5b629a; border-radius: 7px;
+      border: none;
+      width: auto; min-width: 32px;
+    }
+    .product-buttons button:hover {
+      background: #c9d8fc; color: #364182;
+    }
+
+    #canvas-area {
+      flex: 1; padding: 32px 40px 32px 0; box-sizing: border-box;
+      min-width: 0; min-height: 100vh; overflow: auto !important;
+      display: block !important;
+      width: 100vw !important; max-width: none !important;
+    }
+    .canvas-main-row {
+      width: 100vw !important; min-width: 0 !important; max-width: none !important;
+      display: block !important;
+    }
+    #wall {
+      position: relative;
+      border-radius: 22px;
+      box-shadow: 0 12px 40px #42587215, 0 1.5px 0 #b9bcc4;
+      background: repeating-linear-gradient(135deg, #f5f6fa, #e6e8ed 60px);
+      border: 2px solid #b9c8e4;
+      overflow: hidden;
+      margin: 0;
+      margin-right: 0;
+      left: 0; top: 0;
+      display: block !important;
+      max-width: none !important; max-height: none !important;
+    }
+    .tile {
+      position: absolute; cursor: move; user-select: none;
+      transform-origin: center center;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px #bbb2d455;
+      background: #fff6;
+      transition: box-shadow 0.12s;
+      z-index: 2;
+    }
+    .tile:hover { box-shadow: 0 0 16px #8fa6e6cc; border: 2px solid #8fa6e6; }
+    .tile button {
+      position: absolute; top: 2px; right: 2px; background: #fff8;
+      border: 1px solid #aab6c2; border-radius: 50%; font-size: 13px;
+      padding: 1px 6px; cursor: pointer; box-shadow: 0 1px 2px #c6d2ee88;
+      transition: background 0.11s;
+    }
+    .tile button:hover { background: #ffeaea; color: #e53935; border: 1.2px solid #e53935;}
+    #tileCounterBox {
+      padding: 5px 11px; background: #fff8; border: 1.5px solid #b5bac7;
+      font-size: 13.5px; border-radius: 9px;
+      margin-right: 12px;
+    }
+    .input-row {
+      display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+      margin-bottom: 6px; margin-top: 4px;
+    }
+    .input-row label {
+      font-size: 15px; color: #444; font-weight: 600; margin-right: 4px;
+    }
+    .input-row input[type="number"] {
+      width: 86px;
+      margin-bottom: 0;
+    }
+    .input-row button, .input-row span { margin-bottom: 0;}
+    .radio-group {
+      margin-top: 12px; margin-bottom: 12px; display: flex;
+      gap: 18px; align-items: center; font-size: 15px;
+    }
+    .radio-group label { font-size: 15px; cursor: pointer;}
+    .save-btns {
+      margin: 18px 0 8px 0; display: flex; gap: 12px; flex-wrap: wrap;
+    }
+    .save-btns button {
+      background: linear-gradient(90deg, #9db4e5, #bdd5fb);
+      color: #303960; border: none; border-radius: 8px; font-weight: 700;
+      box-shadow: 0 2px 8px #b3c1ec44;
+      font-size: 14px; padding: 6px 13px;
+    }
+    .save-btns button:hover {
+      background: linear-gradient(90deg,#7987ae,#c1d6f2); color: #293360;
+    }
+    #toast {
+      position: fixed; top: 32px; right: 40px; z-index: 1000;
+      padding: 16px 30px; border-radius: 16px; background: #ffffffec;
+      border: 2px solid #849ce8; color: #2e3950; font-weight: 700;
+      box-shadow: 0 6px 32px #8da1c099;
+      opacity: 0; pointer-events: none; font-size: 17px; transition: opacity 0.28s;
+    }
+    #toast.show { opacity: 1; pointer-events: all;}
+    .tooltip {
+      position: absolute; background: #33415eec; color: #fff;
+      padding: 5px 13px; border-radius: 8px; font-size: 13px; pointer-events: none;
+      z-index: 99999; box-shadow: 0 2px 6px #0001;
+      opacity: 0; transition: opacity 0.2s;
+    }
+  </style>
+</head>
+<body>
+  <div id="sidebar">
+    <h3>제품 업로드</h3>
+    <input type="file" id="imageInput" accept="image/*"><br>
+    모델명: <input type="text" id="modelName"><br>
+    <div class="upload-row">
+      <input type="number" id="productWidth" placeholder="가로(mm)">
+      <input type="number" id="productHeight" placeholder="세로(mm)">
+    </div>
+    <button onclick="addProduct()">등록</button>
+    <h4>제품 리스트</h4>
+    <div id="productList"></div>
+  </div>
+  <div id="canvas-area">
+    <h3 style="margin-top:0;letter-spacing:-2px;">
+      벽면 크기(mm)
+    </h3>
+    <div class="input-row">
+      <label for="wallWidth">가로:</label>
+      <input type="number" id="wallWidth" value="3500" min="100">
+      <label for="wallHeight">세로:</label>
+      <input type="number" id="wallHeight" value="1500" min="100">
+      <button onclick="resizeWall()" title="벽면 사이즈 적용">
+        크기 조정
+      </button>
+      <span id="tileCounterBox"><strong>총 수량:</strong> <span id="tileCount">0</span>개</span>
+      <button onclick="deleteAllTiles()" title="벽면의 모든 타일을 삭제">
+        전체 삭제
+      </button>
+    </div>
+    <div class="save-btns">
+      <button onclick="saveTiles()" title="현재 벽면 타일 위치 저장">
+        타일 저장
+      </button>
+      <button onclick="loadTiles()" title="저장된 타일 배열 불러오기">
+        타일 불러오기
+      </button>
+      <button onclick="saveWallAsImage()" title="PNG 이미지로 저장">
+        이미지로 저장
+      </button>
+      <button onclick="saveWallAsPDF()" title="PDF로 저장">
+        PDF로 저장
+      </button>
+    </div>
+    <div class="radio-group">
+      <label><input type="radio" name="layoutMode" value="격자" checked> 격자</label>
+      <label><input type="radio" name="layoutMode" value="엇각"> 엇각</label>
+      <label><input type="radio" name="placeHow" value="전체" checked> 전체배치</label>
+      <label><input type="radio" name="placeHow" value="하나씩"> 하나만배치</label>
+    </div>
+    <div class="canvas-main-row">
+      <div id="wall" title="벽면에 타일을 배치/드래그/삭제하세요."></div>
+    </div>
+  </div>
+  <!-- html2canvas, jsPDF CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script>
+    let selectedProduct = null;
+    let selectedTiles = new Set();
+    let copiedTiles = [];
+    let savedProducts = JSON.parse(localStorage.getItem('products') || '[]');
+    function showToast(msg) {
+      const toast = document.getElementById('toast');
+      toast.textContent = msg;
+      toast.classList.add('show');
+      setTimeout(()=>toast.classList.remove('show'), 2000);
+    }
+    function updateTileCount() {
+      document.getElementById('tileCount').textContent = document.querySelectorAll('.tile').length;
+    }
+    function resizeWall() {
+      const wall = document.getElementById('wall');
+      const width = parseInt(document.getElementById('wallWidth').value);
+      const height = parseInt(document.getElementById('wallHeight').value);
+      const sidebarW = document.getElementById('sidebar').offsetWidth || 340;
+      const padding = 60;
+      const maxW = window.innerWidth - sidebarW - padding;
+      const maxH = window.innerHeight - padding;
+      const scale = Math.min(maxW / width, maxH / height, 1);
+      wall.style.width = width + 'px';
+      wall.style.height = height + 'px';
+      wall.style.transform = `scale(${scale})`;
+      wall.style.transformOrigin = 'top left';
+      wall.innerHTML = '';
+      updateTileCount();
+      showToast('벽면 크기 조정 완료!');
+    }
+    function addProduct() {
+      const input = document.getElementById('imageInput');
+      const name = document.getElementById('modelName').value.trim();
+      const width = document.getElementById('productWidth').value;
+      const height = document.getElementById('productHeight').value;
+      if (!input.files.length || !name || !width || !height) {
+        showToast("모든 항목을 입력해주세요.");
+        return;
+      }
+      const file = input.files[0];
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const product = {
+          src: e.target.result,
+          width: parseInt(width),
+          height: parseInt(height),
+          name
+        };
+        savedProducts.push(product);
+        localStorage.setItem('products', JSON.stringify(savedProducts));
+        renderProductsList();
+        showToast('제품 등록 완료!');
+      };
+      reader.readAsDataURL(file);
+      input.value = '';
+      document.getElementById('modelName').value = '';
+      document.getElementById('productWidth').value = '';
+      document.getElementById('productHeight').value = '';
+    }
+    function renderProductsList() {
+      const productListDiv = document.getElementById('productList');
+      productListDiv.innerHTML = '';
+      savedProducts.forEach(product => renderProduct(product));
+    }
+    function renderProduct(product) {
+      const productListDiv = document.getElementById('productList');
+      const container = document.createElement('div');
+      container.className = 'product';
+      if (selectedProduct === product) container.classList.add('selected-product');
+      const img = document.createElement('img');
+      img.src = product.src;
+      img.onclick = () => {
+        selectedProduct = product;
+        document.querySelectorAll('.product').forEach(el => el.classList.remove('selected-product'));
+        container.classList.add('selected-product');
+        handlePlacement();
+        showToast('제품 선택!');
+      };
+      const info = document.createElement('div');
+      info.className = 'product-info';
+      info.textContent = `${product.name} (${product.width}×${product.height}mm)`;
+      const buttons = document.createElement('div');
+      buttons.className = 'product-buttons';
+      const editBtn = document.createElement('button');
+      editBtn.textContent = '수정';
+      editBtn.onclick = () => {
+        document.getElementById('modelName').value = product.name;
+        document.getElementById('productWidth').value = product.width;
+        document.getElementById('productHeight').value = product.height;
+        showToast('수정할 제품 정보가 입력란에 복사되었습니다!');
+      };
+      const deleteBtn = document.createElement('button');
+      deleteBtn.textContent = '삭제';
+      deleteBtn.onclick = () => {
+        savedProducts = savedProducts.filter(p => p !== product);
+        localStorage.setItem('products', JSON.stringify(savedProducts));
+        if (selectedProduct === product) selectedProduct = null;
+        renderProductsList();
+        showToast('제품 삭제!');
+      };
+      buttons.appendChild(editBtn);
+      buttons.appendChild(deleteBtn);
+      container.appendChild(img);
+      container.appendChild(info);
+      container.appendChild(buttons);
+      productListDiv.appendChild(container);
+    }
+    function handlePlacement() {
+      const mode = document.querySelector('input[name="layoutMode"]:checked').value;
+      const how = document.querySelector('input[name="placeHow"]:checked').value;
+      if (how === '전체') {
+        placeProduct(mode);
+        document.getElementById('wall').onmousedown = null;
+        document.getElementById('wall').onmouseup = null;
+      } else {
+        enableOneByOnePlacement(mode);
+      }
+    }
+    function placeProduct(mode) {
+      if (!selectedProduct) return;
+      const wall = document.getElementById('wall');
+      const wallWidth = parseInt(document.getElementById('wallWidth').value);
+      const wallHeight = parseInt(document.getElementById('wallHeight').value);
+      const tileWidth = selectedProduct.width;
+      const tileHeight = selectedProduct.height;
+      wall.innerHTML = '';
+      for (let y = 0; y < wallHeight; y += tileHeight) {
+        const isOffset = mode === '엇각' && Math.floor(y / tileHeight) % 2 === 1;
+        for (let x = 0; x < wallWidth; x += tileWidth) {
+          const nx = x + (isOffset ? tileWidth / 2 : 0);
+          if (nx + tileWidth > wallWidth || y + tileHeight > wallHeight) continue;
+          const tile = createTile(nx, y);
+          makeDraggable(tile);
+          wall.appendChild(tile);
+        }
+      }
+      updateTileCount();
+      showToast('타일 자동배치 완료!');
+    }
+    function saveTiles() {
+      const tiles = Array.from(document.querySelectorAll('.tile')).map(tile => {
+        const img = tile.querySelector('img');
+        const left = parseFloat(tile.style.left);
+        const top = parseFloat(tile.style.top);
+        const width = parseInt(tile.style.width);
+        const height = parseInt(tile.style.height);
+        const src = img.src;
+        const product = savedProducts.find(
+          p => p.src === src && p.width === width && p.height === height
+        );
+        return {
+          left, top, width, height, src,
+          productName: product ? product.name : null
+        };
+      });
+      localStorage.setItem('tiles', JSON.stringify(tiles));
+      showToast('타일 위치 저장 완료!');
+    }
+    function loadTiles() {
+      const tiles = JSON.parse(localStorage.getItem('tiles') || '[]');
+      const wall = document.getElementById('wall');
+      wall.innerHTML = '';
+      tiles.forEach(data => {
+        let prod = savedProducts.find(p => p.src === data.src && p.width === data.width && p.height === data.height);
+        if (!prod) prod = { src: data.src, width: data.width, height: data.height, name: data.productName || "" };
+        selectedProduct = prod;
+        const tile = createTile(data.left, data.top);
+        makeDraggable(tile);
+        wall.appendChild(tile);
+      });
+      updateTileCount();
+      showToast('타일 복원 완료!');
+    }
+    function enableOneByOnePlacement(mode) {
+      const wall = document.getElementById('wall');
+      wall.onmousedown = null;
+      wall.onmouseup = null;
+      let isDown = false;
+      let downFromWall = false;
+      wall.onmousedown = function(e) {
+        if (e.button !== 0) return;
+        if (e.target === wall) {
+          isDown = true;
+          downFromWall = true;
+        } else {
+          downFromWall = false;
+        }
+      };
+      wall.onmouseup = function(e) {
+        if (!isDown || !selectedProduct) return;
+        isDown = false;
+        if (!downFromWall) return;
+        downFromWall = false;
+        if (e.target !== wall) return;
+        const rect = wall.getBoundingClientRect();
+        const scale = parseFloat(wall.style.transform.match(/scale\(([^)]+)\)/)?.[1] || wall.dataset.scale || 1);
+        const x = (e.clientX - rect.left) / scale;
+        const y = (e.clientY - rect.top) / scale;
+        let px = x, py = y;
+        if (mode === '엇각') {
+          const tileHeight = selectedProduct.height;
+          const row = Math.floor(y / tileHeight);
+          if (row % 2 === 1) px += selectedProduct.width / 2;
+        }
+        const tile = createTile(px, py);
+        makeDraggable(tile);
+        wall.appendChild(tile);
+        updateTileCount();
+        showToast('타일 추가!');
+      };
+    }
+    document.addEventListener('DOMContentLoaded', function() {
+      renderProductsList();
+      document.querySelectorAll('input[name="placeHow"]').forEach(radio => {
+        radio.addEventListener('change', () => {
+          const how = document.querySelector('input[name="placeHow"]:checked').value;
+          const wall = document.getElementById('wall');
+          if (how === '전체') {
+            wall.onmousedown = null;
+            wall.onmouseup = null;
+          } else if (selectedProduct) {
+            const mode = document.querySelector('input[name="layoutMode"]:checked').value;
+            enableOneByOnePlacement(mode);
+          }
+        });
+      });
+      document.querySelectorAll('input[name="layoutMode"]').forEach(radio => {
+        radio.addEventListener('change', () => {
+          const how = document.querySelector('input[name="placeHow"]:checked').value;
+          if (how === '하나씩' && selectedProduct) {
+            const mode = document.querySelector('input[name="layoutMode"]:checked').value;
+            enableOneByOnePlacement(mode);
+          }
+        });
+      });
+      setTimeout(resizeWall, 100);
+      window.addEventListener('resize', () => setTimeout(resizeWall, 100));
+    });
+    function createTile(left, top) {
+      const tile = document.createElement('div');
+      tile.className = 'tile';
+      tile.style.width = selectedProduct.width + 'px';
+      tile.style.height = selectedProduct.height + 'px';
+      tile.style.left = left + 'px';
+      tile.style.top = top + 'px';
+      const img = document.createElement('img');
+      img.src = selectedProduct.src;
+      img.style.width = '100%';
+      img.style.height = '100%';
+      img.draggable = false;
+      const delBtn = document.createElement('button');
+      delBtn.textContent = '❌';
+      delBtn.onclick = (ev) => {
+        ev.preventDefault();
+        ev.stopPropagation();
+        tile.remove();
+        updateTileCount();
+        showToast('타일 삭제!');
+      };
+      delBtn.onmousedown = (ev) => { ev.stopPropagation(); ev.preventDefault(); };
+      delBtn.onmouseup   = (ev) => { ev.stopPropagation(); ev.preventDefault(); };
+      tile.appendChild(img);
+      tile.appendChild(delBtn);
+      return tile;
+    }
+    function makeDraggable(tile) {
+      tile.addEventListener('mousedown', function(e) {
+        if (e.target.tagName === 'BUTTON' || e.target.closest('button')) return;
+        e.preventDefault();
+        const wall = document.getElementById('wall');
+        const scale = parseFloat(wall.style.transform.match(/scale\(([^)]+)\)/)?.[1] || wall.dataset.scale || 1);
+        const shiftX = (e.clientX - tile.getBoundingClientRect().left) / scale;
+        const shiftY = (e.clientY - tile.getBoundingClientRect().top) / scale;
+        function onMouseMove(e) {
+          const x = (e.clientX - wall.getBoundingClientRect().left) / scale - shiftX;
+          const y = (e.clientY - wall.getBoundingClientRect().top) / scale - shiftY;
+          tile.style.left = x + 'px';
+          tile.style.top = y + 'px';
+        }
+        function onMouseUp() {
+          document.removeEventListener('mousemove', onMouseMove);
+          document.removeEventListener('mouseup', onMouseUp);
+        }
+        document.addEventListener('mousemove', onMouseMove);
+        document.addEventListener('mouseup', onMouseUp);
+      });
+      tile.ondragstart = () => false;
+    }
+    function deleteAllTiles() {
+      document.querySelectorAll('.tile').forEach(tile => tile.remove());
+      selectedTiles.clear();
+      updateTileCount();
+      showToast('벽면 타일 전체 삭제');
+    }
+    function saveWallAsImage() {
+      const wall = document.getElementById('wall');
+      html2canvas(wall, {backgroundColor: null}).then(canvas => {
+        const link = document.createElement('a');
+        link.href = canvas.toDataURL('image/png');
+        link.download = '타일_배치.png';
+        link.click();
+        showToast('PNG 저장 완료!');
+      });
+    }
+    function saveWallAsPDF() {
+      const wall = document.getElementById('wall');
+      html2canvas(wall, {backgroundColor: null}).then(canvas => {
+        const imgData = canvas.toDataURL('image/png');
+        const pdf = new window.jspdf.jsPDF({
+          orientation: 'landscape',
+          unit: 'px',
+          format: [canvas.width, canvas.height]
+        });
+        pdf.addImage(imgData, 'PNG', 0, 0, canvas.width, canvas.height);
+        pdf.save('타일_배치.pdf');
+        showToast('PDF 저장 완료!');
+      });
+    }
+    window.onload = () => {
+      resizeWall();
+      renderProductsList();
+    };
+  </script>
+  <div id="toast"></div>
+</body>
+</html>
